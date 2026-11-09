@@ -1,0 +1,29 @@
+services:
+  fmc-to-nac:
+    build: .
+    image: fmc-to-nac:local
+    # Read-only export. Pass FMC credentials via environment variables or an env file.
+    # IMPORTANT: never commit .env files with real credentials.
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      # FMC_HOST: https://fmc.example.local
+      # FMC_USERNAME: readonly-user
+      # FMC_PASSWORD: ${FMC_PASSWORD}
+      # FMC_DOMAIN_UUID: ""
+      # FMC_VERIFY_SSL: "true"
+      # FMC_CA_BUNDLE: /certs/ca.pem
+      FMC_TIMEOUT: "60"
+      LOG_LEVEL: INFO
+    volumes:
+      - ./output:/out
+      # - ./certs:/certs:ro
+    command:
+      [
+        "--out",
+        "/out",
+        "--exclude",
+        "objects.intrusion_rules,objects.applications",
+        "--redact",
+      ]

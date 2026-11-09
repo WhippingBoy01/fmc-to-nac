@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fmc-to-nac"
+version = "0.1.0"
+description = "Export Cisco Secure Firewall Management Center (FMC) configuration to NetAsCode (NaC) FMC YAML"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "httpx>=0.27.0",
+  "python-dotenv>=1.0.0",
+  "PyYAML>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+fmc-to-nac = "fmc_to_nac.cli:main"
+
+[tool.setuptools]
+packages = ["fmc_to_nac", "fmc_to_nac.exporters"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
