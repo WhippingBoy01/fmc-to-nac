@@ -169,6 +169,10 @@ def build_existing_helper(model: dict[str, Any]) -> dict[str, Any]:
     return {"existing": {"fmc": {"domains": domains}}}
 
 
+def _safe_name(name: str, default: str = "item") -> str:
+    return "".join(c if c.isalnum() or c in "._-" else "_" for c in (name or default))
+
+
 def write_output(
     result: dict[str, Any],
     out_dir: Path,
@@ -191,7 +195,8 @@ def write_output(
         p.write_text(_yaml_dump(model), encoding="utf-8")
         written.append(p)
     else:
-        # Split by domain and major sections for readability.
+        # Split mode: write per-type files (no duplicate monolithic section/domain/combined files).
+        # NaC merges YAML files, so each file must contain a unique slice of data.
         fmc = model.get("fmc", {})
         system = fmc.get("system")
         if system:
@@ -199,22 +204,22 @@ def write_output(
             p.write_text(_yaml_dump({"fmc": {"system": system}}), encoding="utf-8")
             written.append(p)
         for dom in fmc.get("domains", []):
-            safe = "".join(c if c.isalnum() or c in "._-" else "_" for c in (dom.get("name") or "domain"))
-            # Full domain file
-            p = out_dir / f"domain_{safe}.nac.yaml"
-            p.write_text(_yaml_dump({"fmc": {"domains": [dom]}}), encoding="utf-8")
-            written.append(p)
-            # Section files
+            dom_name = dom.get("name") or "domain"
+            dom_dir = out_dir / _safe_name(dom_name)
             for section in ["objects", "policies", "devices", "vpns", "integrations"]:
-                if dom.get(section):
-                    sp = out_dir / safe / f"{section}.nac.yaml"
+                section_data = dom.get(section)
+                if not isinstance(section_data, dict):
+                    continue
+                for type_name, items in section_data.items():
+                    if items in (None, [], {}):
+                        continue
+                    sp = dom_dir / section / f"{_safe_name(str(type_name))}.nac.yaml"
                     sp.parent.mkdir(parents=True, exist_ok=True)
-                    sp.write_text(_yaml_dump({"fmc": {"domains": [{"name": dom["name"], section: dom[section]}]}}), encoding="utf-8")
+                    sp.write_text(
+                        _yaml_dump({"fmc": {"domains": [{"name": dom_name, section: {type_name: items}}]}}),
+                        encoding="utf-8",
+                    )
                     written.append(sp)
-        # Combined convenience file (NaC merges YAML dirs/files).
-        cp = out_dir / "fmc.nac.yaml"
-        cp.write_text(_yaml_dump(model), encoding="utf-8")
-        written.append(cp)
 
     if emit_existing:
         ep = out_dir / "existing.nac.yaml"

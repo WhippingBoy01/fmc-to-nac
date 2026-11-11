@@ -149,24 +149,36 @@ python -m fmc_to_nac --env-file .env --out ./output --log-level DEBUG
 
 ## Output files
 
-Default (split) output:
+Default (split) output — **one file per type** (no duplicate monolithic section files):
 
 ```text
 output/
-  fmc.nac.yaml                 # combined convenience file
-  system.nac.yaml              # best-effort global system section (if exported)
-  domain_<Domain>.nac.yaml     # full per-domain file
+  system.nac.yaml                        # best-effort global system section (if exported)
   <Domain>/
-    objects.nac.yaml
-    policies.nac.yaml
-    devices.nac.yaml
-    vpns.nac.yaml
-    integrations.nac.yaml
-  existing.nac.yaml            # only with --emit-existing (name-only helper)
-  export-report.yaml           # domains, counts, skipped, warnings
+    objects/
+      hosts.nac.yaml
+      networks.nac.yaml
+      security_zones.nac.yaml
+      ...
+    policies/
+      access_control_policies.nac.yaml
+      ftd_nat_policies.nac.yaml
+      ...
+    devices/
+      devices.nac.yaml
+      ha_pairs.nac.yaml
+      ...
+    vpns/
+      site_to_site_vpns.nac.yaml
+      remote_access_vpns.nac.yaml
+    integrations/
+      ad_ldap_realms.nac.yaml
+      ...
+  existing.nac.yaml                      # only with --emit-existing (name-only helper)
+  export-report.yaml                     # domains, counts, skipped, warnings
 ```
 
-`--single-file` writes only `fmc.nac.yaml` (+ `export-report.yaml`, and `existing.nac.yaml` if requested).
+`--single-file` writes a combined `fmc.nac.yaml` (+ `export-report.yaml`, and `existing.nac.yaml` if requested). Use split mode when you want granular, per-type NaC YAML files for review/version control.
 
 ## NaC mapping notes and limitations
 
